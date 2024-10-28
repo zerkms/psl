@@ -17,25 +17,8 @@ final class AssertException extends Exception
     /**
      * @param list<string> $paths
      */
-    private function __construct(?string $actual, string $expected, array $paths = [], ?Throwable $previous = null)
+    private function __construct(?string $actual, string $expected, string $message, array $paths = [], ?Throwable $previous = null)
     {
-        $first = $previous instanceof Exception ? $previous->getFirstFailingActualType() : $actual;
-
-        if ($first !== null) {
-            $message = Str\format(
-                'Expected "%s", got "%s"%s.',
-                $expected,
-                $first,
-                $paths ? ' at path "' . Str\join($paths, '.') . '"' : '',
-            );
-        } else {
-            $message = Str\format(
-                'Expected "%s", received no value at path "%s".',
-                $expected,
-                Str\join($paths, '.'),
-            );
-        }
-
         parent::__construct(
             $message,
             $actual ?? 'null',
@@ -57,9 +40,18 @@ final class AssertException extends Exception
         ?string $path = null,
         ?Throwable $previous = null
     ): self {
-        $paths = $previous instanceof Exception ? [$path, ...$previous->getPaths()] : [$path];
+        $paths = Vec\filter_nulls($previous instanceof Exception ? [$path, ...$previous->getPaths()] : [$path]);
+        $actual = get_debug_type($value);
+        $first = $previous instanceof Exception ? $previous->getFirstFailingActualType() : $actual;
 
-        return new self(get_debug_type($value), $expected_type, Vec\filter_nulls($paths), $previous);
+        $message = Str\format(
+            'Expected "%s", got "%s"%s.',
+            $expected_type,
+            $first,
+            $paths ? ' at path "' . Str\join($paths, '.') . '"' : '',
+        );
+
+        return new self($actual, $expected_type, $message, $paths, $previous);
     }
 
     public static function withoutValue(
@@ -67,8 +59,14 @@ final class AssertException extends Exception
         ?string $path = null,
         ?Throwable $previous = null
     ): self {
-        $paths = $previous instanceof Exception ? [$path, ...$previous->getPaths()] : [$path];
+        $paths = Vec\filter_nulls($previous instanceof Exception ? [$path, ...$previous->getPaths()] : [$path]);
 
-        return new self(null, $expected_type, Vec\filter_nulls($paths), $previous);
+        $message = Str\format(
+            'Expected "%s", received no value at path "%s".',
+            $expected_type,
+            Str\join($paths, '.'),
+        );
+
+        return new self(null, $expected_type, $message, $paths, $previous);
     }
 }
