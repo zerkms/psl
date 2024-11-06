@@ -14,10 +14,12 @@ final class CoercionException extends Exception
 {
     private string $target;
 
+    private bool $withValue;
+
     /**
      * @param list<string> $paths
      */
-    private function __construct(?string $actual, string $target, string $message, array $paths = [], ?Throwable $previous = null)
+    private function __construct(?string $actual, string $target, string $message, bool $withValue, array $paths = [], ?Throwable $previous = null)
     {
         parent::__construct(
             $message,
@@ -27,6 +29,7 @@ final class CoercionException extends Exception
         );
 
         $this->target = $target;
+        $this->withValue = $withValue;
     }
 
     public function getTargetType(): string
@@ -52,7 +55,7 @@ final class CoercionException extends Exception
             $previous && !$previous instanceof self ? ': ' . $previous->getMessage() : '',
         );
 
-        return new self($actual, $target, $message, $paths, $previous);
+        return new self($actual, $target, $message, true, $paths, $previous);
     }
 
     public static function withoutValue(
@@ -69,6 +72,18 @@ final class CoercionException extends Exception
             $previous && !$previous instanceof self ? ': ' . $previous->getMessage() : '',
         );
 
-        return new self(null, $target, $message, $paths, $previous);
+        return new self(null, $target, $message, false, $paths, $previous);
+    }
+
+    public function wrap(
+        mixed $value,
+        string $target,
+        ?string $path = null
+    ): self {
+        if ($this->withValue) {
+            return self::withValue($value, $target, $path, $this);
+        }
+
+        return self::withoutValue($target, $path, $this);
     }
 }

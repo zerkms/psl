@@ -249,6 +249,17 @@ final class ShapeTypeTest extends TypeTest
             [],
             'Could not coerce to type "array{\'name\': string}" at path "name" as the value was not passed.'
         ];
+        yield 'missing nested key' => [
+            Type\shape([
+                'a' => Type\shape([
+                    'b' => Type\shape([
+                        'c' => Type\mixed(),
+                    ]),
+                ]),
+            ]),
+            ['a' => ['b' => []]],
+            'Could not coerce to type "array{\'a\': array{\'b\': array{\'c\': mixed}}}" at path "a.b.c" as the value was not passed.',
+        ];
         yield 'invalid key' => [
             Type\shape([
                 'name' => Type\string(),

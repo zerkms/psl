@@ -148,7 +148,7 @@ final readonly class ShapeType extends Type\Type
             }
         } catch (CoercionException $e) {
             throw match (true) {
-                $element_value_found => CoercionException::withValue($array[$element] ?? null, $this->toString(), PathExpression::path($element), $e),
+                $element_value_found => $e->wrap($array[$element] ?? null, $this->toString(), PathExpression::path($element)),
                 default => $e
             };
         }
